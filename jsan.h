@@ -78,7 +78,7 @@ jsan_arena_push(struct Jsan_Arena *arena, size_t size)
 		arena->next = jsan_arena_create( (size > this_size) ? size : this_size);
 		if (!arena->next)
 			return NULL;
-	}	
+	}
 	return jsan_arena_push(arena->next, size);
 }
 
@@ -100,6 +100,8 @@ struct Jsan_Parser {
 	struct Jsan *node;
 };
 
+static int jsan_parser_try_value(struct Jsan_Parser *parser);
+
 static struct Jsan_Parser
 jsan_parser_make(const char *data, size_t size)
 {
@@ -114,6 +116,14 @@ jsan_parser_make(const char *data, size_t size)
 		parser.node = jsan_arena_push(parser.arena, sizeof (struct Jsan) );
 	
 	return parser;
+}
+
+static void
+jsan_parser_trim(struct Jsan_Parser *parser)
+{
+	while ( ( parser->current < parser->end )
+		&& isspace(*parser->current) )
+		parser->current++;
 }
 
 static int
@@ -156,24 +166,78 @@ jsan_parser_try_string(struct Jsan_Parser *parser)
 	return 0;
 }
 
+static size_t
+jsan_parser_count_children(const struct Jsan_Parser *parser)
+{
+	size_t objects = 0, arrays = 0, comas = 0, elements = 0;
+
+	const char *cursor = parser->current;
+	while (cursor < parser->end && *cursor != ']') {
+		if (*cursor == '{')
+			objects++;
+		else if (*cursor == '}')
+			objects--;
+		else if (*cursor == '[')
+			arrays++;
+		else if (*cursor == ']')
+			arrays--;
+
+		if (objects == 0 && arrays == 0) {
+			if (*cursor == ']')
+				break;
+			else if (*cursor == ',')
+				comas++;
+			else if (!isspace(*cursor) && (comas == elements))
+				elements++;
+		}
+		
+		cursor++;
+	}
+
+	if (objects != 0 || arrays != 0)
+		return (size_t) -1;
+	if (comas > 0 && elements >= 0 && elements <= comas)
+		return (size_t) -1;
+
+	return elements;
+}
+
 static int
 jsan_parser_try_array(struct Jsan_Parser *parser)
 {
-	return -1;
+	parser->current++; // eat the '['
+	
+	struct Jsan *array = parser->node;
+	array->length = jsan_parser_count_children(parser);
+	if (array->length == (size_t) -1)
+		return -1;
+
+	if (array->length > 0) {
+		size_t new_size = array->length * sizeof (struct Jsan);
+		array->value.children = jsan_arena_push(parser->arena, new_size);
+		if (!array->value.children)
+			return -1;
+	}
+
+	for (size_t i = 0; i < array->length; i++) {
+		parser->node = &array->value.children[i];
+
+		jsan_parser_trim(parser);
+		if (jsan_parser_try_value(parser) != 0)
+			return -1;
+		
+		jsan_parser_trim(parser);
+		parser->current++; // eat the ','
+	}
+
+	parser->node = array;
+	return 0;
 }
 
 static int
 jsan_parser_try_object(struct Jsan_Parser *parser)
 {
 	return -1;
-}
-
-static void
-jsan_parser_trim(struct Jsan_Parser *parser)
-{
-	while ( ( parser->current < parser->end )
-		&& isspace(*parser->current) )
-		parser->current++;
 }
 
 static int
@@ -185,16 +249,19 @@ jsan_parser_try_value(struct Jsan_Parser *parser)
 	case 5:
 		if (strncmp(parser->current, "false", 5) == 0) {
 			parser->node->type = JSAN_FALSE;
+			parser->current += 5;
 			return 0;
 		}
 		
 	case 4:
 		if (strncmp(parser->current, "true", 4) == 0) {
 			parser->node->type = JSAN_TRUE;
+			parser->current += 4;
 			return 0;
 		}
 		if (strncmp(parser->current, "null", 4) == 0) {
 			parser->node->type = JSAN_NULL;
+			parser->current += 4;
 			return 0;
 		}
 
@@ -278,6 +345,7 @@ jsan_print(const struct Jsan *node)
 		break;
 	default:
 		printf("---");
+		break;
 	}
 }
 

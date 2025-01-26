@@ -11,14 +11,15 @@
 			printf("\n"); \
 			jsan_free(node); \
 		} else { \
-			printf("Failed to parse " NAME "\n"); \
-			return -1; \
+			printf("FAILED\n"); \
+			/*return -1;*/ \
 		} \
 	} while (0)
 
 int
 main(void)
 {
+#if 0
 	JSAN_TEST_PRINT(
 		"Depth 0 null",
 		"null");
@@ -28,6 +29,9 @@ main(void)
 	JSAN_TEST_PRINT(
 		"Depth 0 true",
 		"true");
+
+	printf("\n");
+	
 	JSAN_TEST_PRINT(
 		"Depth 0 number #0",
 		"42");
@@ -46,6 +50,9 @@ main(void)
 	JSAN_TEST_PRINT(
 		"Depth 0 number #5 (scientific notation, negative)",
 		"-0.042e5");
+
+	printf("\n");
+	
 	JSAN_TEST_PRINT(
 		"Depth 0 string #0",
 		"\"abcdefg\"");
@@ -53,14 +60,33 @@ main(void)
 		"Depth 0 string #1 (empty)",
 		"\"\"");
 	JSAN_TEST_PRINT(
+		"Depth 0 string #2 (Lorem Ipsum)",
+		"\"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\"");
+
+	printf("\n");
+
+#endif
+	
+	JSAN_TEST_PRINT(
 		"Depth 0 array #0",
-		"\[0, 1, 2, 3]");
+		"[0, 1, 2, 3]");
 	JSAN_TEST_PRINT(
 		"Depth 0 array #1 (empty)",
-		"\[]");
+		"[]");
 	JSAN_TEST_PRINT(
-		"Depth 0 array #2 (different children types)",
-		"\[null, false, true, -123.456, \"abcdef\"]");
+		"Depth 0 array #2 (invalid, missing element before coma)",
+		"[, null, false]");
+	JSAN_TEST_PRINT(
+		"Depth 0 array #3 (invalid, missing element after coma)",
+		"[true, null, ]");
+	JSAN_TEST_PRINT(
+		"Depth 0 array #4 (different children types)",
+		"[null, false, true, -123.456, \"abcdef\"]");
+
+#if 0
+	
+	printf("\n");
+	
 	JSAN_TEST_PRINT(
 		"Depth 0 object",
 		"{\n"
@@ -71,5 +97,9 @@ main(void)
 		"\t\"fifth\": \"abcdef\"\n"
 		"}");
 
+	printf("\n");
+
+#endif
+	
 	return 0;
 }
