@@ -3,7 +3,7 @@
 
 #define JSAN_TEST_PRINT(NAME, DATA) \
 	do { \
-		printf("Parsing " NAME "\n\t>>> "); \
+		printf("Parsing " NAME " >>> "); \
 		const char *data = DATA; \
 		struct Jsan *node = jsan_parse(data, strlen(data) ); \
 		if (node) { \
@@ -40,6 +40,12 @@ main(void)
 	JSAN_TEST_PRINT(
 		"Depth 0 number #3 (float, negative)",
 		"-123.456");
+	JSAN_TEST_PRINT(
+		"Depth 0 number #4 (scientific notation)",
+		"0.69e2");
+	JSAN_TEST_PRINT(
+		"Depth 0 number #5 (scientific notation, negative)",
+		"-0.042e5");
 	JSAN_TEST_PRINT(
 		"Depth 0 string #0",
 		"\"abcdefg\"");

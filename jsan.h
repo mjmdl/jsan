@@ -125,13 +125,35 @@ jsan_parser_try_key(struct Jsan_Parser *parser)
 static int
 jsan_parser_try_number(struct Jsan_Parser *parser)
 {
-	return -1;
+	char *after = NULL;
+	parser->node->value.number = strtod(parser->current, &after);
+	if (after == parser->current)
+		return -1;
+	parser->current = after;	
+	return 0;
 }
 
 static int
 jsan_parser_try_string(struct Jsan_Parser *parser)
 {
-	return -1;
+	const char *open = parser->current++;
+	while ( (parser->current < parser->end)
+		&& (*parser->current != '"')
+		&& (*parser->current != '\n') )
+		parser->current++;
+	size_t length = parser->current++ - open;
+
+	char *string = jsan_arena_push(parser->arena, length + 1);
+	if (!string)
+		return -1;
+
+	if (length > 1) {
+		strncpy(string, open + 1, length - 1);
+		string[length] = '\0';
+	} else
+		string[0] = '\0';
+	parser->node->value.string = string;
+	return 0;
 }
 
 static int
@@ -179,7 +201,9 @@ jsan_parser_try_value(struct Jsan_Parser *parser)
 	case 3:
 	case 2:
 	case 1:
-		if ( ('0' <= *parser->current) && (*parser->current <= '9') ) {
+		if ( ( ('0' <= *parser->current) && (*parser->current <= '9') )
+			|| ('-' == *parser->current) )
+		{
 			parser->node->type = JSAN_NUMBER;
 			return jsan_parser_try_number(parser);
 		}
@@ -244,7 +268,7 @@ jsan_print(const struct Jsan *node)
 		printf("%f", node->value.number);
 		break;
 	case JSAN_STRING:
-		printf("%s", node->value.string);
+		printf("\"%s\"", node->value.string);
 		break;
 	case JSAN_ARRAY:
 		printf("[%zu elements]", node->length);
