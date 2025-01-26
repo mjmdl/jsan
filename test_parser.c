@@ -19,7 +19,6 @@
 int
 main(void)
 {
-#if 0
 	JSAN_TEST_PRINT(
 		"Depth 0 null",
 		"null");
@@ -64,8 +63,6 @@ main(void)
 		"\"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\"");
 
 	printf("\n");
-
-#endif
 	
 	JSAN_TEST_PRINT(
 		"Depth 0 array #0",
@@ -82,8 +79,6 @@ main(void)
 	JSAN_TEST_PRINT(
 		"Depth 0 array #4 (different children types)",
 		"[null, false, true, -123.456, \"abcdef\"]");
-
-#if 0
 	
 	printf("\n");
 	
@@ -98,8 +93,6 @@ main(void)
 		"}");
 
 	printf("\n");
-
-#endif
 	
 	return 0;
 }

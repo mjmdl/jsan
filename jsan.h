@@ -314,12 +314,34 @@ jsan_free(struct Jsan *root)
 	free((char *) root - sizeof (struct Jsan_Arena));
 }
 
+static void
+jsan_print_array(const struct Jsan *node)
+{
+	if (!node) {
+		printf("---");
+		return;
+	}
+
+	printf("[");
+
+	for (size_t i = 0; i < node->length; i++) {
+		jsan_print(&node->value.children[i]);
+		
+		if (i != node->length - 1)
+			printf(", ");
+	}
+	
+	printf("]");
+}
+
 // TODO: Fill a buffer instead of directly printing to stdout.
 void
 jsan_print(const struct Jsan *node)
 {
-	if (!node)
+	if (!node) {
 		printf("---");
+		return;
+	}
 		
 	switch (node->type) {
 	case JSAN_NULL:
@@ -338,7 +360,7 @@ jsan_print(const struct Jsan *node)
 		printf("\"%s\"", node->value.string);
 		break;
 	case JSAN_ARRAY:
-		printf("[%zu elements]", node->length);
+		jsan_print_array(node);
 		break;
 	case JSAN_OBJECT:
 		printf("{%zu keys}", node->length);
