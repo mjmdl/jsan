@@ -26,7 +26,6 @@ struct Jsan {
 
 struct Jsan *jsan_parse(const char *data, size_t size);
 void jsan_free(struct Jsan *root);
-void jsan_print(const struct Jsan *node);
 
 #endif // JSAN_H
 #ifdef JSAN_IMPL
@@ -172,16 +171,7 @@ jsan_parser_count_children(const struct Jsan_Parser *parser)
 	size_t objects = 0, arrays = 0, comas = 0, elements = 0;
 
 	const char *cursor = parser->current;
-	while (cursor < parser->end && *cursor != ']') {
-		if (*cursor == '{')
-			objects++;
-		else if (*cursor == '}')
-			objects--;
-		else if (*cursor == '[')
-			arrays++;
-		else if (*cursor == ']')
-			arrays--;
-
+	while (cursor < parser->end) {
 		if (objects == 0 && arrays == 0) {
 			if (*cursor == ']')
 				break;
@@ -191,9 +181,18 @@ jsan_parser_count_children(const struct Jsan_Parser *parser)
 				elements++;
 		}
 		
+		if (*cursor == '{')
+			objects++;
+		else if (*cursor == '}')
+			objects--;
+		else if (*cursor == '[')
+			arrays++;
+		else if (*cursor == ']')
+			arrays--;
+		
 		cursor++;
 	}
-
+	
 	if (objects != 0 || arrays != 0)
 		return (size_t) -1;
 	if (comas > 0 && elements >= 0 && elements <= comas)
@@ -311,64 +310,7 @@ jsan_parse(const char *data, size_t size)
 void
 jsan_free(struct Jsan *root)
 {
-	free((char *) root - sizeof (struct Jsan_Arena));
-}
-
-static void
-jsan_print_array(const struct Jsan *node)
-{
-	if (!node) {
-		printf("---");
-		return;
-	}
-
-	printf("[");
-
-	for (size_t i = 0; i < node->length; i++) {
-		jsan_print(&node->value.children[i]);
-		
-		if (i != node->length - 1)
-			printf(", ");
-	}
-	
-	printf("]");
-}
-
-// TODO: Fill a buffer instead of directly printing to stdout.
-void
-jsan_print(const struct Jsan *node)
-{
-	if (!node) {
-		printf("---");
-		return;
-	}
-		
-	switch (node->type) {
-	case JSAN_NULL:
-		printf("null");
-		break;
-	case JSAN_FALSE:
-		printf("false");
-		break;
-	case JSAN_TRUE:
-		printf("true");
-		break;
-	case JSAN_NUMBER:
-		printf("%f", node->value.number);
-		break;
-	case JSAN_STRING:
-		printf("\"%s\"", node->value.string);
-		break;
-	case JSAN_ARRAY:
-		jsan_print_array(node);
-		break;
-	case JSAN_OBJECT:
-		printf("{%zu keys}", node->length);
-		break;
-	default:
-		printf("---");
-		break;
-	}
+	free(root - 1);
 }
 
 #endif // JSAN_IMPL

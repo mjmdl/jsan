@@ -7,7 +7,7 @@
 		const char *data = DATA; \
 		struct Jsan *node = jsan_parse(data, strlen(data) ); \
 		if (node) { \
-			jsan_print(node); \
+			print_json_node(node); \
 			printf("\n"); \
 			jsan_free(node); \
 		} else { \
@@ -15,6 +15,91 @@
 			/*return -1;*/ \
 		} \
 	} while (0)
+
+char *
+read_file(const char *path, size_t *out_size_opt)
+{
+	FILE *file = fopen(path, "rb");
+	if (!file)
+		return NULL;
+	long length;
+	char *buffer;
+	if (fseek(file, 0, SEEK_END) < 0
+		|| (length = ftell(file)) < 0
+		|| fseek(file, 0, SEEK_SET) < 0
+		|| !(buffer = malloc(length)))
+	{
+		fclose(file);
+		return NULL;
+	}
+	size_t bytes_read = fread(buffer, sizeof (char), (size_t) length, file);
+	fclose(file);
+	if (bytes_read != length) {
+		free(buffer);
+		return NULL;
+	}
+	if (out_size_opt)
+		*out_size_opt = (size_t) length;
+	return buffer;
+}
+
+static void print_json_node(const struct Jsan *node);
+
+static void
+print_json_array(const struct Jsan *node)
+{
+	if (!node) {
+		printf("---");
+		return;
+	}
+
+	printf("[");
+
+	for (size_t i = 0; i < node->length; i++) {
+		print_json_node(&node->value.children[i]);
+		
+		if (i != node->length - 1)
+			printf(", ");
+	}
+	
+	printf("]");
+}
+
+static void
+print_json_node(const struct Jsan *node)
+{
+	if (!node) {
+		printf("---");
+		return;
+	}
+		
+	switch (node->type) {
+	case JSAN_NULL:
+		printf("null");
+		break;
+	case JSAN_FALSE:
+		printf("false");
+		break;
+	case JSAN_TRUE:
+		printf("true");
+		break;
+	case JSAN_NUMBER:
+		printf("%f", node->value.number);
+		break;
+	case JSAN_STRING:
+		printf("\"%s\"", node->value.string);
+		break;
+	case JSAN_ARRAY:
+		print_json_array(node);
+		break;
+	case JSAN_OBJECT:
+		printf("{%zu keys}", node->length);
+		break;
+	default:
+		printf("---");
+		break;
+	}
+}
 
 int
 main(void)
@@ -79,6 +164,12 @@ main(void)
 	JSAN_TEST_PRINT(
 		"Depth 0 array #4 (different children types)",
 		"[null, false, true, -123.456, \"abcdef\"]");
+	JSAN_TEST_PRINT(
+		"Depth 0 array #5 (nested arrays)",
+		"[[1, 2, 3], [4, 5, 6]]");
+	JSAN_TEST_PRINT(
+		"Depth 0 array #6 (nested arrays, various types)",
+		"[null, [true, false], [[1, 2, 3], [1, 2, 3, 4]], [], null]");
 	
 	printf("\n");
 	
