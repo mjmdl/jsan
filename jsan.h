@@ -112,7 +112,7 @@ jsan_parser_make(const char *data, size_t size)
 	size_t arena_size = sizeof (struct Jsan) * 1024;
 	parser.arena = jsan_arena_create(arena_size);
 	if (parser.arena)
-		parser.node = jsan_arena_push(parser.arena, sizeof (struct Jsan) );
+		parser.node = jsan_arena_push(parser.arena, sizeof (struct Jsan));
 	
 	return parser;
 }
@@ -120,8 +120,8 @@ jsan_parser_make(const char *data, size_t size)
 static void
 jsan_parser_trim(struct Jsan_Parser *parser)
 {
-	while ( ( parser->current < parser->end )
-		&& isspace(*parser->current) )
+	while (parser->current < parser->end
+		&& isspace(*parser->current))
 		parser->current++;
 }
 
@@ -177,7 +177,7 @@ jsan_parser_count_children(const struct Jsan_Parser *parser)
 				break;
 			else if (*cursor == ',')
 				comas++;
-			else if (!isspace(*cursor) && (comas == elements))
+			else if (!isspace(*cursor) && comas == elements)
 				elements++;
 		}
 		
@@ -269,21 +269,21 @@ jsan_parser_try_value(struct Jsan_Parser *parser)
 	case 3:
 	case 2:
 	case 1:
-		if ( ( ('0' <= *parser->current) && (*parser->current <= '9') )
-			|| ('-' == *parser->current) )
+		if (('0' <= *parser->current && *parser->current <= '9')
+			|| '-' == *parser->current)
 		{
 			parser->node->type = JSAN_NUMBER;
 			return jsan_parser_try_number(parser);
 		}
-		if ( (*parser->current == '"') ) {
+		if (*parser->current == '"') {
 			parser->node->type = JSAN_STRING;
 			return jsan_parser_try_string(parser);
 		}
-		if ( (*parser->current == '[') ) {
+		if (*parser->current == '[') {
 			parser->node->type = JSAN_ARRAY; 
 			return jsan_parser_try_array(parser);
 		}
-		if ( (*parser->current == '{') ) {
+		if (*parser->current == '{') {
 			parser->node->type = JSAN_OBJECT;
 			return jsan_parser_try_object(parser);
 		}
