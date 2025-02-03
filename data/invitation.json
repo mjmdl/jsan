@@ -1,0 +1,27 @@
+{
+    "id": 65,
+    "memberKind": "STUDENT",
+    "classroom": {
+	"id": 99,
+	"name": "Turma 2024-3",
+	"startTime": "20:00:00-03",
+	"endTime": "21:00:00-03",
+	"daysOfWeek": [
+	    "MONDAY",
+	    "WEDNESDAY",
+	    "THURSDAY"
+	],
+	"capacity": 20,
+	"studentCount": 13,
+	"status": "ONGOING",
+	"course": {
+	    "id": 97,
+	    "name": "Robotics"
+	},
+	"address": {
+	    "id": 21,
+	    "name": "Tesseract",
+	    "urlAttachment": "teste.com"
+	}
+    }
+}

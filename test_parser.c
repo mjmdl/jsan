@@ -5,9 +5,9 @@
 	do { \
 		printf("Parsing " NAME " >>> "); \
 		const char *data = DATA; \
-		struct Jsan *node = jsan_parse(data, strlen(data) ); \
+		struct Jsan *node = jsan_parse(data, strlen(data)); \
 		if (node) { \
-			print_json_node(node); \
+			print_json_node(node, 0); \
 			printf("\n"); \
 			jsan_free(node); \
 		} else { \
@@ -43,30 +43,67 @@ read_file(const char *path, size_t *out_size_opt)
 	return buffer;
 }
 
-static void print_json_node(const struct Jsan *node);
+static void print_json_node(const struct Jsan *node, size_t depth);
 
 static void
-print_json_array(const struct Jsan *node)
+print_json_array(const struct Jsan *node, size_t depth)
 {
 	if (!node) {
 		printf("---");
 		return;
 	}
 
-	printf("[");
+	printf("[\n");
 
 	for (size_t i = 0; i < node->length; i++) {
-		print_json_node(&node->value.children[i]);
+		for (size_t i = 0; i < depth; i++)
+			printf("  ");
+
+		print_json_node(&node->value.children[i], depth);
 		
 		if (i != node->length - 1)
-			printf(", ");
+			printf(",\n");
 	}
 	
+	printf("\n");
+	for (size_t i = 0; i < depth - 1; i++)
+		printf("  ");
 	printf("]");
 }
 
 static void
-print_json_node(const struct Jsan *node)
+print_json_object(const struct Jsan *node, size_t depth)
+{
+	if (!node) {
+		printf("---");
+		return;
+	}
+
+	printf("{\n");
+
+	for (size_t i = 0; i < node->length; i++) {
+		const struct Jsan *child = &node->value.children[i];
+
+		for (size_t i = 0; i < depth; i++)
+			printf("  ");
+		
+		if (child->key)
+			printf("\"%s\": ", child->key);
+		
+		print_json_node(child, depth);
+
+		if (i != node->length - 1)
+			printf(",\n");
+	}
+	
+	printf("\n");
+	for (size_t i = 0; i < depth - 1; i++)
+		printf("  ");
+	printf("}");
+}
+
+static void
+print_json_node(const struct Jsan *node, size_t depth)
 {
 	if (!node) {
 		printf("---");
@@ -84,16 +121,16 @@ print_json_node(const struct Jsan *node)
 		printf("true");
 		break;
 	case JSAN_NUMBER:
-		printf("%f", node->value.number);
+		printf("%.10g", node->value.number);
 		break;
 	case JSAN_STRING:
 		printf("\"%s\"", node->value.string);
 		break;
 	case JSAN_ARRAY:
-		print_json_array(node);
+		print_json_array(node, depth + 1);
 		break;
 	case JSAN_OBJECT:
-		printf("{%zu keys}", node->length);
+		print_json_object(node, depth + 1);
 		break;
 	default:
 		printf("---");
@@ -102,8 +139,24 @@ print_json_node(const struct Jsan *node)
 }
 
 int
-main(void)
+main(int argc, char *argv[])
 {
+	if (argc >= 2) {
+		size_t size;
+		char *data = read_file(argv[1], &size);
+		if (!data || size <= 0)
+			return -1;
+
+		struct Jsan *root = jsan_parse(data, size);
+		if (!root)
+			return -1;
+
+		print_json_node(root, 0);
+		printf("\n");
+		
+		return 0;
+	}
+	
 	JSAN_TEST_PRINT(
 		"Depth 0 null",
 		"null");
@@ -170,11 +223,11 @@ main(void)
 	JSAN_TEST_PRINT(
 		"Depth 0 array #6 (nested arrays, various types)",
 		"[null, [true, false], [[1, 2, 3], [1, 2, 3, 4]], [], null]");
-	
+
 	printf("\n");
 	
 	JSAN_TEST_PRINT(
-		"Depth 0 object",
+		"Depth 0 object #0",
 		"{\n"
 		"\t\"first\": null,\n"
 		"\t\"second\": false,\n"
@@ -182,8 +235,13 @@ main(void)
 		"\t\"fourth\": -123.456,\n"
 		"\t\"fifth\": \"abcdef\"\n"
 		"}");
+	JSAN_TEST_PRINT(
+		"Depth 0 object #1 (nested)",
+		"{\n"
+		"\t\"first\": {\"a\": true, \"b\": false}\n"
+		"}");
 
 	printf("\n");
-	
+
 	return 0;
 }

@@ -1,0 +1,36 @@
+{
+    "page": 0,
+    "lastPage": 0,
+    "invitations": [
+	{
+	    "id": 42,
+	    "creatorPersonId": 535,
+	    "name": "Jeregutango",
+	    "token": "fb18fyHe",
+	    "countUses": 0,
+	    "maxUses": null,
+	    "createdAt": "2025-01-17T14:45:28.528686+00:00",
+	    "expiresAt": null
+	},
+	{
+	    "id": 41,
+	    "creatorPersonId": 136,
+	    "name": "Test",
+	    "token": "89SFzzCb",
+	    "countUses": 0,
+	    "maxUses": null,
+	    "createdAt": "2025-01-17T12:20:44.979572+00:00",
+	    "expiresAt": null
+	},
+	{
+	    "id": 40,
+	    "creatorPersonId": 136,
+	    "name": "Auto",
+	    "token": "Y2IhjGWQ",
+	    "countUses": 0,
+	    "maxUses": null,
+	    "createdAt": "2025-01-17T12:20:34.25061+00:00",
+	    "expiresAt": null
+	}
+    ]
+}

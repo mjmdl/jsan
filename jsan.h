@@ -14,7 +14,7 @@ enum Jsan_Type {
 };
 
 struct Jsan {
-	const char *key;
+	char *key;
 	union {
 		double number;
 		char *string;
@@ -126,12 +126,6 @@ jsan_parser_trim(struct Jsan_Parser *parser)
 }
 
 static int
-jsan_parser_try_key(struct Jsan_Parser *parser)
-{
-	return -1;
-}
-
-static int
 jsan_parser_try_number(struct Jsan_Parser *parser)
 {
 	char *after = NULL;
@@ -146,9 +140,9 @@ static int
 jsan_parser_try_string(struct Jsan_Parser *parser)
 {
 	const char *open = parser->current++;
-	while ( (parser->current < parser->end)
-		&& (*parser->current != '"')
-		&& (*parser->current != '\n') )
+	while (parser->current < parser->end
+		&& *parser->current != '"'
+		&& *parser->current != '\n')
 		parser->current++;
 	size_t length = parser->current++ - open;
 
@@ -166,14 +160,14 @@ jsan_parser_try_string(struct Jsan_Parser *parser)
 }
 
 static size_t
-jsan_parser_count_children(const struct Jsan_Parser *parser)
+jsan_parser_count_children(const struct Jsan_Parser *parser, char end)
 {
 	size_t objects = 0, arrays = 0, comas = 0, elements = 0;
 
 	const char *cursor = parser->current;
 	while (cursor < parser->end) {
 		if (objects == 0 && arrays == 0) {
-			if (*cursor == ']')
+			if (*cursor == end)
 				break;
 			else if (*cursor == ',')
 				comas++;
@@ -207,7 +201,7 @@ jsan_parser_try_array(struct Jsan_Parser *parser)
 	parser->current++; // eat the '['
 	
 	struct Jsan *array = parser->node;
-	array->length = jsan_parser_count_children(parser);
+	array->length = jsan_parser_count_children(parser, ']');
 	if (array->length == (size_t) -1)
 		return -1;
 	if (array->length == 0)
@@ -236,9 +230,69 @@ jsan_parser_try_array(struct Jsan_Parser *parser)
 }
 
 static int
+jsan_parser_try_key(struct Jsan_Parser *parser)
+{
+	struct Jsan *field = parser->node;
+		
+	if (*parser->current == '"')
+		parser->current++; // eat the '"'
+	
+	const char *cursor = parser->current;
+	while (cursor < parser->end
+		&& *cursor != '"'
+		&& *cursor != '\n')
+		cursor++;
+	size_t length = cursor - parser->current;
+
+	field->key = jsan_arena_push(parser->arena, length + 1);
+	if (!field->key)
+		return -1;
+	field->key = strncpy(field->key, parser->current, length);
+	field->key[length] = '\0';
+
+	parser->current = cursor + 1; // eat the '"'
+	jsan_parser_trim(parser);
+	if (*parser->current == ':')
+		parser->current++; // eat the ':'
+	else
+		return -1;
+
+	jsan_parser_trim(parser);
+	return jsan_parser_try_value(parser);
+}
+
+static int
 jsan_parser_try_object(struct Jsan_Parser *parser)
 {
-	return -1;
+	parser->current++; // eat the '{'
+
+	struct Jsan *object = parser->node;
+	object->length = jsan_parser_count_children(parser, '}');
+	if (object->length == (size_t) -1)
+		return -1;
+	if (object->length == 0)
+		parser->current++; // eat the '}'
+
+	if (object->length > 0) {
+		size_t new_size = object->length * sizeof (struct Jsan);
+		object->value.children = jsan_arena_push(parser->arena, new_size);
+		if (!object->value.children)
+			return -1;
+	}
+
+	for (size_t i = 0; i < object->length; i++) {
+		parser->node = &object->value.children[i];
+
+		jsan_parser_trim(parser);
+		if (jsan_parser_try_key(parser) != 0)
+			return -1;
+		
+		jsan_parser_trim(parser);
+		parser->current++; // eat the ',' or '}'
+	}
+
+	parser->node = object;
+	return 0;
 }
 
 static int
