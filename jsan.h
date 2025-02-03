@@ -210,6 +210,8 @@ jsan_parser_try_array(struct Jsan_Parser *parser)
 	array->length = jsan_parser_count_children(parser);
 	if (array->length == (size_t) -1)
 		return -1;
+	if (array->length == 0)
+		parser->current++; // eat the ']'
 
 	if (array->length > 0) {
 		size_t new_size = array->length * sizeof (struct Jsan);
